@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulasi PK Meropenem – Klinik Ananda</title>
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Fraunces:ital,wght@0,600;0,700;0,900;1,700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --teal2:     #4486C8;
+      --teal-pale: #EEF5FC;
+      --green:     #48BB78;
+      --red:       #F48080;
+      --cream:     #F6FAFF;
+      --dark:      #1C3A5C;
+      --text:      #2D4E6E;
+      --muted:     #7A9EC0;
+      --border:    rgba(68,134,200,.15);
+      --shadow:    0 4px 24px rgba(68,134,200,.12);
+      --r:         16px;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text); background: var(--cream); line-height: 1.6; }
+    a { text-decoration: none; color: inherit; }
+    nav { position: sticky; top: 0; z-index: 999; background: rgba(255,255,255,.96); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); box-shadow: var(--shadow); }
+    .nav-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 64px; }
+    .nav-brand { display: flex; align-items: center; gap: 10px; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; color: var(--dark); }
+    .nav-logo-badge { width: 38px; height: 38px; background: var(--teal2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .nav-back { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--teal2); padding: 8px 14px; border-radius: 8px; transition: background .2s; }
+    .nav-back:hover { background: var(--teal-pale); }
+    .hero { background: linear-gradient(135deg, #EEF5FC 0%, #D6EAF8 100%); padding: 56px 24px 48px; text-align: center; border-bottom: 1px solid var(--border); }
+    .hero .tag { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--teal2); background: rgba(68,134,200,.12); padding: 5px 14px; border-radius: 30px; border: 1px solid rgba(68,134,200,.2); margin-bottom: 16px; }
+    .hero h1 { font-family: 'Fraunces', serif; font-size: clamp(26px, 4vw, 42px); font-weight: 700; color: var(--dark); margin-bottom: 12px; line-height: 1.15; }
+    .hero p { color: var(--muted); font-size: 16px; max-width: 560px; margin: 0 auto; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px 60px; }
+    .params-card { background: #fff; border: 1px solid var(--border); border-radius: var(--r); padding: 28px 32px; margin-bottom: 28px; box-shadow: var(--shadow); }
+    .params-card h3 { font-family: 'Fraunces', serif; font-size: 18px; color: var(--dark); margin-bottom: 20px; }
+    .params-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 16px 24px; margin-bottom: 20px; }
+    .param-group label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+    .param-group input { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; font-family: 'Plus Jakarta Sans', sans-serif; color: var(--dark); background: var(--cream); transition: border-color .2s; outline: none; }
+    .param-group input:focus { border-color: var(--teal2); }
+    .btn-run { display: inline-flex; align-items: center; gap: 8px; padding: 11px 28px; background: var(--teal2); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; cursor: pointer; transition: background .2s; }
+    .btn-run:hover { background: #3573b5; }
+    .plot-card { background: #fff; border: 1px solid var(--border); border-radius: var(--r); padding: 24px; box-shadow: var(--shadow); margin-bottom: 28px; }
+    #pkPlot { width: 100%; min-height: 440px; }
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .info-card { background: #fff; border: 1px solid var(--border); border-radius: var(--r); padding: 20px 24px; box-shadow: var(--shadow); }
+    .info-card .ic-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+    .info-card .ic-val { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 700; color: var(--dark); }
+    .info-card .ic-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .ic-plasma { border-left: 4px solid var(--teal2); }
+    .ic-lung   { border-left: 4px solid var(--green); }
+    .ic-bulla  { border-left: 4px solid var(--red); }
+    .ic-tmic   { border-left: 4px solid #E8A020; }
+    .note { background: #fff; border: 1px solid var(--border); border-radius: var(--r); padding: 20px 28px; font-size: 13px; color: var(--muted); box-shadow: var(--shadow); }
+    .note strong { color: var(--text); }
+    footer { text-align: center; padding: 24px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--border); margin-top: 40px; }
+    @media (max-width: 600px) { .params-card { padding: 20px; } .params-grid { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="nav-brand">
+      <div class="nav-logo-badge">&#128138;</div>
+      <span>Klinik Ananda</span>
+    </div>
+    <a href="index.html" class="nav-back">&#8592; Kembali ke Beranda</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="tag">Farmakokinetik Klinis</div>
+  <h1>Simulasi PK Meropenem</h1>
+  <p>Konsentrasi plasma, jaringan paru, dan bulla setelah pemberian infus intravena berulang</p>
+</div>
+
+<div class="container">
+  <div class="params-card">
+    <h3>Parameter Simulasi</h3>
+    <div class="params-grid">
+      <div class="param-group">
+        <label>Dosis (mg)</label>
+        <input type="number" id="dose" value="1000" min="250" max="2000" step="250">
+      </div>
+      <div class="param-group">
+        <label>Interval Dosis (jam)</label>
+        <input type="number" id="interval" value="8" min="6" max="24" step="2">
+      </div>
+      <div class="param-group">
+        <label>Jumlah Dosis</label>
+        <input type="number" id="ndoses" value="3" min="1" max="6" step="1">
+      </div>
+      <div class="param-group">
+        <label>Waktu Infus (menit)</label>
+        <input type="number" id="infMin" value="30" min="15" max="180" step="15">
+      </div>
+      <div class="param-group">
+        <label>MIC Target (mg/L)</label>
+        <input type="number" id="mic" value="2" min="0.25" max="16" step="0.25">
+      </div>
+    </div>
+    <button class="btn-run" onclick="runSimulation()">&#9654; Jalankan Simulasi</button>
+  </div>
+
+  <div class="plot-card">
+    <div id="pkPlot"></div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card ic-plasma">
+      <div class="ic-label">Plasma C<sub>max</sub></div>
+      <div class="ic-val" id="stat-plasma-cmax">&ndash;</div>
+      <div class="ic-sub">mg/L (dosis pertama)</div>
+    </div>
+    <div class="info-card ic-lung">
+      <div class="ic-label">Paru C<sub>max</sub></div>
+      <div class="ic-val" id="stat-lung-cmax">&ndash;</div>
+      <div class="ic-sub">mg/L (dosis pertama)</div>
+    </div>
+    <div class="info-card ic-bulla">
+      <div class="ic-label">Bulla C<sub>max</sub></div>
+      <div class="ic-val" id="stat-bulla-cmax">&ndash;</div>
+      <div class="ic-sub">mg/L (keseluruhan simulasi)</div>
+    </div>
+    <div class="info-card ic-tmic">
+      <div class="ic-label">%T&gt;MIC Plasma</div>
+      <div class="ic-val" id="stat-tmic">&ndash;</div>
+      <div class="ic-sub">selama interval dosis terakhir</div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>Catatan:</strong> Simulasi menggunakan model tiga kompartemen dengan parameter farmakokinetik populasi
+    (V<sub>1</sub> = 17.5 L, CL = 14 L/jam, k<sub>lung-in</sub> = 0.4 jam<sup>-1</sup>,
+    k<sub>bulla-in</sub> = 0.05 jam<sup>-1</sup>). Rasio penetrasi jaringan paru ≈ 1.0 dan bulla ≈ 0.15
+    terhadap plasma. Alat ini hanya untuk tujuan edukasi; bukan pengganti penilaian farmakokinetik individual.
+  </div>
+</div>
+
+<footer>
+  Klinik Utama Rawat Inap Ananda &mdash; Alat bantu edukasi farmakokinetik klinis.
+</footer>
+
+<script>
+  const PK = {
+    V1: 17.5, V2: 14.0, V3: 48.6,
+    k10: 0.80, k12: 0.40, k21: 0.50, k13: 0.05, k31: 0.12
+  };
+
+  function runSimulation() {
+    const dose     = parseFloat(document.getElementById('dose').value)     || 1000;
+    const interval = parseFloat(document.getElementById('interval').value) || 8;
+    const nDoses   = Math.max(1, Math.round(parseFloat(document.getElementById('ndoses').value) || 3));
+    const infMin   = parseFloat(document.getElementById('infMin').value)   || 30;
+    const mic      = parseFloat(document.getElementById('mic').value)      || 2;
+
+    const infTime = infMin / 60;
+    const infRate = dose / infTime;
+    const totalTime = interval * nDoses;
+    const dt = 0.005;
+    const steps = Math.ceil(totalTime / dt);
+    const doseTimes = Array.from({ length: nDoses }, (_, i) => i * interval);
+
+    function isInfusing(t) {
+      for (const td of doseTimes) {
+        if (t >= td - 1e-9 && t < td + infTime - 1e-9) return true;
+      }
+      return false;
+    }
+
+    const Cp = new Float64Array(steps + 1);
+    const Cl = new Float64Array(steps + 1);
+    const Cb = new Float64Array(steps + 1);
+    const timeArr = new Float64Array(steps + 1);
+    let A1 = 0, A2 = 0, A3 = 0;
+
+    for (let i = 0; i <= steps; i++) {
+      const t = i * dt;
+      timeArr[i] = t;
+      Cp[i] = A1 / PK.V1;
+      Cl[i] = A2 / PK.V2;
+      Cb[i] = A3 / PK.V3;
+      const R   = isInfusing(t) ? infRate : 0;
+      const dA1 = R - (PK.k10 + PK.k12 + PK.k13) * A1 + PK.k21 * A2 + PK.k31 * A3;
+      const dA2 = PK.k12 * A1 - PK.k21 * A2;
+      const dA3 = PK.k13 * A1 - PK.k31 * A3;
+      A1 = Math.max(0, A1 + dA1 * dt);
+      A2 = Math.max(0, A2 + dA2 * dt);
+      A3 = Math.max(0, A3 + dA3 * dt);
+    }
+
+    const stride = Math.max(1, Math.floor(steps / 2000));
+    const t_p = [], Cp_p = [], Cl_p = [], Cb_p = [];
+    for (let i = 0; i <= steps; i += stride) {
+      t_p.push(+timeArr[i].toFixed(4));
+      Cp_p.push(+Cp[i].toFixed(4));
+      Cl_p.push(+Cl[i].toFixed(4));
+      Cb_p.push(+Cb[i].toFixed(4));
+    }
+
+    const endFirst = Math.min(steps, Math.floor(interval / dt));
+    let cmax_p = 0, cmax_l = 0;
+    for (let i = 0; i <= endFirst; i++) {
+      if (Cp[i] > cmax_p) cmax_p = Cp[i];
+      if (Cl[i] > cmax_l) cmax_l = Cl[i];
+    }
+    const cmax_b = Math.max(...Cb_p);
+
+    const lastStart = Math.floor((nDoses - 1) * interval / dt);
+    const lastEnd   = Math.min(steps, Math.floor(nDoses * interval / dt));
+    let above = 0;
+    for (let i = lastStart; i <= lastEnd; i++) { if (Cp[i] >= mic) above++; }
+    const tMIC = (above / (lastEnd - lastStart) * 100).toFixed(1);
+
+    document.getElementById('stat-plasma-cmax').textContent = cmax_p.toFixed(1) + ' mg/L';
+    document.getElementById('stat-lung-cmax').textContent   = cmax_l.toFixed(1) + ' mg/L';
+    document.getElementById('stat-bulla-cmax').textContent  = cmax_b.toFixed(1) + ' mg/L';
+    document.getElementById('stat-tmic').textContent        = tMIC + '%';
+
+    Plotly.newPlot('pkPlot', [
+      { x: t_p, y: Cp_p, type: 'scatter', mode: 'lines', name: 'Plasma',              line: { color: '#4486C8', width: 2.5 } },
+      { x: t_p, y: Cl_p, type: 'scatter', mode: 'lines', name: 'Jaringan Paru',       line: { color: '#48BB78', width: 2.5 } },
+      { x: t_p, y: Cb_p, type: 'scatter', mode: 'lines', name: 'Bulla (Perfusi Buruk)', line: { color: '#F48080', width: 2.5 } },
+      { x: [0, totalTime], y: [mic, mic], type: 'scatter', mode: 'lines', name: 'MIC (' + mic + ' mg/L)', line: { color: '#E8A020', width: 1.5, dash: 'dash' }, hoverinfo: 'name' }
+    ], {
+      title: { text: 'Konsentrasi Meropenem vs Waktu', font: { family: 'Fraunces, serif', size: 20, color: '#1C3A5C' } },
+      xaxis: { title: 'Waktu (jam)', zeroline: true, zerolinecolor: '#ccc', gridcolor: '#EEF5FC', range: [0, totalTime] },
+      yaxis: { title: 'Konsentrasi (mg/L)', zeroline: true, zerolinecolor: '#ccc', gridcolor: '#EEF5FC', rangemode: 'tozero' },
+      legend: { orientation: 'h', x: 0.01, y: 1.1 },
+      plot_bgcolor: '#FAFCFF', paper_bgcolor: '#FFFFFF',
+      font: { family: 'Plus Jakarta Sans, sans-serif', color: '#2D4E6E' },
+      margin: { t: 70, r: 20, b: 60, l: 65 },
+      hovermode: 'x unified'
+    }, { responsive: true, displayModeBar: true });
+  }
+
+  runSimulation();
+</script>
+</body>
+</html>
